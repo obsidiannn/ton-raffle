@@ -29,7 +29,6 @@ export class RaffleContract implements Contract {
         return new RaffleContract(contractAddress(workchain, init), init);
     }
 
-
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
             value,
@@ -70,12 +69,21 @@ export class RaffleContract implements Contract {
         let admin_addr = stack.readNumber();
         let last_number = stack.readNumber();
         //hash: stack.readNumber()
-        return last_number;
+        return {
+            available_balance,
+            service_balance,
+            admin_addr_workchain,
+            admin_addr,
+            last_number
+        }
     }
 
     async getBalance(provider: ContractProvider) {
         const { stack } = await provider.get("get_info", []);
         let available_balance = stack.readNumber();
+        // const {} = await provider.get('get_balance',[])
+        // console.log(`original balance =  ,target balance = ${available_balance}`);
+
         return available_balance;
     }
 

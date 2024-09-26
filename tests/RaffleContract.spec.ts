@@ -1,5 +1,5 @@
 import { Blockchain, SandboxContract, TreasuryContract, printTransactionFees } from '@ton/sandbox';
-import { Cell, toNano } from '@ton/core';
+import { Cell, fromNano, toNano } from '@ton/core';
 import { RaffleContract } from '../wrappers/RaffleContract';
 import '@ton/test-utils';
 import { compile } from '@ton/blueprint';
@@ -59,21 +59,43 @@ describe('RaffleContract', () => {
         for (let index = 0; index < 100; index++) {
             const name = 'buyer' + index
             const buyer = await blockchain.treasury(name)
+            const buyerBalance = await buyer.getBalance()
             const getBalance1 = await raffleContract.getBalance();
             const deployResult = await raffleContract.sendInternalMsg(buyer.getSender(), toNano('1'));
             const getBalance2 = await raffleContract.getBalance();
 
-            console.log(`buyer: `, name, '[before]', getBalance1, '[after]', getBalance2);
+            console.log(`contract balance = ${fromNano(getBalance1)} -> ${fromNano(getBalance2)}`);
             if (getBalance1 > getBalance2) {
                 console.log('发送奖品');
                 console.log(deployResult.events);
-                const currentBalance = await buyer.getBalance()
-                console.log(`当前买家余额${currentBalance}`);
-
             }
+
+            const buyerBalance2 = await buyer.getBalance()
+            console.log(`buyer ${name} balance = ${fromNano(buyerBalance)} -> ${fromNano(buyerBalance2)}`);
+
 
             console.log('----------------');
         }
+    })
+
+    it('多次抽奖后，管理员提现', async () => {
+        for (let index = 0; index < 100; index++) {
+            const buyer = await blockchain.treasury('buyer' + index)
+            await raffleContract.sendInternalMsg(buyer.getSender(), toNano('1'));
+        }
+
+        const balance = await deployer.getBalance()
+
+        const data = await raffleContract.getData()
+        console.log('data=', data);
+        await raffleContract.sendWithdraw(deployer.getSender(), toNano('0.01'))
+        const data2 = await raffleContract.getData()
+
+        const balance2 = await deployer.getBalance()
+
+        console.log('data=', data2);
+        console.log(`balance: ${balance} -> ${balance2}`);
+
     })
 
 });

@@ -1,5 +1,5 @@
  
-
+;; 支付奖金
 () game::payout(slice sender_addr,int amount,slice msg) impure inline_ref {
     cell body = begin_cell()
     .store_uint(0,32)
@@ -36,6 +36,7 @@
 
     if (number < 10) { ;; win 1/2 available balance
         int win = db::available_balance / 2;
+
         int commission = muldiv(win, 10, 100);
         win -= commission;
 
@@ -58,13 +59,20 @@
 
         return ();
     }
-
+    ;; 这里的钱会分成两份，其中 commission 是管理员能赚取的佣金
+    ;; 买家中奖后，合约给的奖励实际上会比实际少一些，缺失的部分会作为管理员的可提现余额
     if (number < 2000) { ;; win x2
         int win = 2 * oneton();
+        ;; win~dump();
         int commission = muldiv(win, 10, 100);
+        ;; commission~dump();
         win -= commission;
-
+        ;; win~dump();
+        ;; db::available_balance~dump();
         db::available_balance -= (win + commission);
+        ;; db::available_balance~dump();
+        ;; [int balance,_] = get_balance();
+        ;; balance~dump();
         db::service_balance += commission;
         game::payout(sender_addr, win, msg::x2());
 
